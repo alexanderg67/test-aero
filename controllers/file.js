@@ -1,6 +1,7 @@
  const db=require('../database/files')
  const path = require('path');
  const fs = require('fs').promises;
+ const { StatusCodes } =require('http-status-codes')
  
 
 const uploadFile=async (req,res) => { 
@@ -15,18 +16,18 @@ const uploadFile=async (req,res) => {
    
     sampleFile.mv(uploadPath, async function(err) {
         if (err)
-          return res.status(500).send(err);
+          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err);
         const file ={}
         file.name=sampleFile.name.split('.')[0]
         file.extension=sampleFile.name.split('.')[1]
         file.mimeType=sampleFile.mimetype
         file.size=sampleFile.size
         await db.addUploadedFile(file)
-        res.status(201).json({message: 'file uploaded'})
+        res.status(StatusCodes.CREATED).json({message: 'file uploaded'})
         
       });
     }catch(err){
-        return res.status(400).json( {message:'Request Error' }) 
+        return res.status(StatusCodes.BAD_REQUEST).json( {message:'Request Error' }) 
        }
  
 }
@@ -40,31 +41,31 @@ const listFiles =async (req,res) => {
     console.log('list',list_size, page)
     const offset=(page-1)* list_size;
     const files= await db.getFileList ( list_size, offset )
-    res.status(200).json({ files})
+    res.status(StatusCodes.OK).json({ files})
     }catch(err){
-    return res.status(400).json( {message:'Request Error' }) 
+    return res.status(StatusCodes.BAD_REQUEST).json( {message:'Request Error' }) 
    }
 }
 
 const  deleteFile =async (req,res) => {
 const id=req.params.id
 if(!id){
-    return res.status(400).send('No   file id');
+    return res.status(StatusCodes.BAD_REQUEST).send('No   file id');
 }
 try {
 const result = await db.getFile(id)
 if( result.length==0){
-    return res.status(400).send('No such file id');
+    return res.status(StatusCodes.BAD_REQUEST).send('No such file id');
 }
 const file= result[0]
 const fullFileName=file.name+ '.'+ file.extension
 const filePath= path.join(__dirname , '../uploads/' , fullFileName)
 await fs.unlink(filePath);
 await db.deleteFile(id)
-res.status(200).json({message: 'file deleted'})
+res.status(StatusCodes.OK).json({message: 'file deleted'})
 
 }catch(err){
-    return res.status(400).json( {message:'Request Error' }) 
+    return res.status(StatusCodes.BAD_REQUEST).json( {message:'Request Error' }) 
    }
 
 }
@@ -72,20 +73,20 @@ res.status(200).json({message: 'file deleted'})
 const   getFileInfo =async (req,res) => {
 const id=req.params.id
 if(!id){
-    return res.status(400).send('No   file id');
+    return res.status(StatusCodes.BAD_REQUEST).send('No   file id');
 }
 
 try {
     const result = await db.getFile(id)
     if( result.length==0){
-        return res.status(400).send('No such file id');
+        return res.status(StatusCodes.BAD_REQUEST).send('No such file id');
     }
     const file= result[0]
 
-    res.status(200).json({ file})
+    res.status(StatusCodes.OK).json({ file})
 
 }catch(err){
-    return res.status(400).json( {message:'Request Error' }) 
+    return res.status(StatusCodes.BAD_REQUEST).json( {message:'Request Error' }) 
    }
     
 }
@@ -93,13 +94,13 @@ try {
 const downloadFile =async (req,res) => {
     const id=req.params.id
     if(!id){
-        return res.status(400).send('No   file id');
+        return res.status(StatusCodes.BAD_REQUEST).send('No   file id');
     }
 
     try {
         const result = await db.getFile(id)
         if( result.length==0){
-            return res.status(400).send('No such file id');
+            return res.status(StatusCodes.BAD_REQUEST).send('No such file id');
         }
         const file= result[0]
         const fullFileName=file.name+ '.'+ file.extension
@@ -107,7 +108,7 @@ const downloadFile =async (req,res) => {
         res.download(filePath);
     
     }catch(err){
-        return res.status(400).json( {message:'Request Error' }) 
+        return res.status(StatusCodes.BAD_REQUEST).json( {message:'Request Error' }) 
        }
 }
 
@@ -115,12 +116,12 @@ const updateFile =async (req,res) => {
     const id=req.params.id
     const {filename} =req.body
     if(!id || !filename){
-        return res.status(400).send('wrong data');
+        return res.status(StatusCodes.BAD_REQUEST).send('wrong data');
     }
     try {
         const result = await db.getFile(id)
         if( result.length==0){
-            return res.status(400).send('No such file id');
+            return res.status(StatusCodes.BAD_REQUEST).send('No such file id');
         }
         const file= result[0]
         const fullFileName=file.name+ '.'+ file.extension
@@ -132,11 +133,11 @@ const updateFile =async (req,res) => {
         await fs.rename (oldFile, newFile)
         await db.updateFilename(file2, id)
 
-        res.status(200).json({message: 'file updated'})
+        res.status(StatusCodes.OK).json({message: 'file updated'})
 
 
     }catch(err){
-        return res.status(400).json( {message:'Request Error' }) 
+        return res.status(StatusCodes.BAD_REQUEST).json( {message:'Request Error' }) 
        }
 
 
